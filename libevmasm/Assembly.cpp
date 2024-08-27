@@ -1281,8 +1281,19 @@ LinkerObject const& Assembly::assembleLegacy() const
 	uint8_t tagPush = static_cast<uint8_t>(pushInstruction(bytesPerTag));
 	uint8_t dataRefPush = static_cast<uint8_t>(pushInstruction(bytesPerDataRef));
 
+	size_t instructionIndex = 0;
+	std::function addInstructionOffset = [&](){
+		ret.instructionOffsets.emplace_back(
+			LinkerObject::InstructionOffset{
+				.offset = ret.bytecode.size(),
+				.index = instructionIndex
+			}
+		);
+	};
 	for (AssemblyItem const& item: items)
 	{
+		addInstructionOffset();
+
 		// store position of the invalid jump destination
 		if (item.type() != Tag && m_tagPositionsInBytecode[0] == std::numeric_limits<size_t>::max())
 			m_tagPositionsInBytecode[0] = ret.bytecode.size();
@@ -1355,23 +1366,35 @@ LinkerObject const& Assembly::assembleLegacy() const
 		{
 			// Expect 2 elements on stack (source, dest_base)
 			auto const& offsets = immutableReferencesBySub[item.data()].second;
+			ret.instructionOffsets.pop_back(); // remove last offset - this simplifies instruction offset handling in the following control flow.
 			for (size_t i = 0; i < offsets.size(); ++i)
 			{
 				if (i != offsets.size() - 1)
 				{
+					addInstructionOffset();
 					ret.bytecode.push_back(uint8_t(Instruction::DUP2));
+
+					addInstructionOffset();
 					ret.bytecode.push_back(uint8_t(Instruction::DUP2));
 				}
+				addInstructionOffset();
 				// TODO: should we make use of the constant optimizer methods for pushing the offsets?
 				bytes offsetBytes = toCompactBigEndian(u256(offsets[i]));
 				ret.bytecode.push_back(static_cast<uint8_t>(pushInstruction(static_cast<unsigned>(offsetBytes.size()))));
 				ret.bytecode += offsetBytes;
+
+				addInstructionOffset();
 				ret.bytecode.push_back(uint8_t(Instruction::ADD));
+
+				addInstructionOffset();
 				ret.bytecode.push_back(uint8_t(Instruction::MSTORE));
 			}
 			if (offsets.empty())
 			{
+				addInstructionOffset();
 				ret.bytecode.push_back(uint8_t(Instruction::POP));
+
+				addInstructionOffset();
 				ret.bytecode.push_back(uint8_t(Instruction::POP));
 			}
 			immutableReferencesBySub.erase(item.data());
@@ -1386,7 +1409,11 @@ LinkerObject const& Assembly::assembleLegacy() const
 		default:
 			solAssert(false, "Unexpected opcode while assembling.");
 		}
+
+		++instructionIndex;
 	}
+
+	ret.offsetAfterLastInstruction = ret.bytecode.size();
 
 	if (!immutableReferencesBySub.empty())
 		throw

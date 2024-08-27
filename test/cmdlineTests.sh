@@ -220,6 +220,18 @@ json = re.sub(r"\n\s*\n", "\n", json)                                           
 json = re.sub(r"},(\n{0,1})\n*(\s*(]|}))", r"}\1\2", json)                          # Remove trailing comma
 open("$stdout_path", "w").write(json)
 EOF
+        if grep -q "ethdebug" "$stdout_path";
+        then
+            local temporaryFile
+            temporaryFile=$(mktemp)
+            if [[ ! -f "${tdir}/dont-remove-ethdebug" ]];
+            then
+                jq --indent 4 '(. | .. | objects | select(has("ethdebug"))) |= (.ethdebug = "<ETHDEBUG DEBUG DATA REMOVED>")' "$stdout_path" > "$temporaryFile" && mv "$temporaryFile" "$stdout_path"
+            else
+                jq --indent 4 'if .ethdebug.compilation.compiler.version? != null then .ethdebug.compilation.compiler.version = "<VERSION REMOVED>" else . end' "$stdout_path" > "$temporaryFile" && mv "$temporaryFile" "$stdout_path"
+            fi
+        fi
+
         sed -i.bak -E -e 's/ Consider adding \\"pragma solidity \^[0-9.]*;\\"//g' "$stdout_path"
         sed -i.bak -E -e 's/\"opcodes\":[[:space:]]*\"[^"]+\"/\"opcodes\":\"<OPCODES REMOVED>\"/g' "$stdout_path"
         sed -i.bak -E -e 's/\"sourceMap\":[[:space:]]*\"[0-9:;-]+\"/\"sourceMap\":\"<SOURCEMAP REMOVED>\"/g' "$stdout_path"

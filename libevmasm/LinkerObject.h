@@ -46,6 +46,22 @@ struct LinkerObject
 	/// to a list of offsets into the bytecode that refer to their values.
 	std::map<u256, ImmutableRefs> immutableReferences;
 
+	struct InstructionOffset
+	{
+		/// Points to the beginning of each instruction (including the opcode itself).
+		size_t offset;
+		/// The instruction index can be used to find the related instruction, if a single "complex instruction"
+		/// generated multiple instructions during assembly. This is the case with e.g. AssignImmutable.
+		/// It generates multiple instruction from a single instruction. To be able to keep track of
+		/// the original instruction indices the original instruction index is stored in index.
+		size_t index;
+	};
+
+	/// Vector that stores bytecode offsets & instruction index per instruction.
+	std::vector<InstructionOffset> instructionOffsets;
+	/// Bytecode offset after last instruction (including potential immediate operands of last instruction).
+	size_t offsetAfterLastInstruction = {};
+
 	struct FunctionDebugData
 	{
 		std::optional<size_t> bytecodeOffset;

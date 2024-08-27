@@ -30,6 +30,7 @@
 #include <libyul/optimiser/Suite.h>
 
 #include <libevmasm/Disassemble.h>
+#include <libevmasm/Ethdebug.h>
 #include <libevmasm/EVMAssemblyStack.h>
 
 #include <libsmtutil/Exceptions.h>
@@ -1799,7 +1800,7 @@ Json StandardCompiler::compileYul(InputsAndSettings _inputsAndSettings)
 		output["contracts"][sourceName][contractName]["yulCFGJson"] = stack.cfgJson();
 
 	if (isEthdebugRequested(_inputsAndSettings.outputSelection))
-		output["ethdebug"] = stack.ethdebug();
+		output["ethdebug"] = evmasm::ethdebug::resources({sourceName}, VersionString);
 
 	return output;
 }
