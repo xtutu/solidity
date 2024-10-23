@@ -136,6 +136,7 @@ static std::string const g_strSrcMapRuntime = "srcmap-runtime";
 static std::string const g_strStorageLayout = "storage-layout";
 static std::string const g_strTransientStorageLayout = "transient-storage-layout";
 static std::string const g_strVersion = "version";
+static std::string const g_strAssemblyStructure = "assembly-structure";
 
 static bool needsHumanTargetedStdout(CommandLineOptions const& _options)
 {
@@ -158,7 +159,8 @@ static bool needsHumanTargetedStdout(CommandLineOptions const& _options)
 		_options.compiler.outputs.opcodes ||
 		_options.compiler.outputs.signatureHashes ||
 		_options.compiler.outputs.storageLayout ||
-		_options.compiler.outputs.transientStorageLayout;
+		_options.compiler.outputs.transientStorageLayout ||
+		_options.compiler.outputs.assemblyStructure;
 }
 
 static bool coloredOutput(CommandLineOptions const& _options)
@@ -209,7 +211,6 @@ void CommandLineInterface::handleBinary(std::string const& _contract)
 		binary = objectWithLinkRefsHex(m_assemblyStack->object(_contract));
 	if (m_options.compiler.outputs.binaryRuntime)
 		binaryRuntime = objectWithLinkRefsHex(m_assemblyStack->runtimeObject(_contract));
-
 	if (m_options.compiler.outputs.binary)
 	{
 		if (!m_options.output.dir.empty())
@@ -590,6 +591,22 @@ void CommandLineInterface::handleEthdebug(std::string const& _contract)
 	}
 }
 
+void CommandLineInterface::handleAssemblyStructure(std::string const& _contract)
+{
+	solAssert(CompilerInputModes.count(m_options.input.mode) == 1);
+	solAssert(m_compiler->compilationSuccessful());
+
+	if (!m_options.compiler.outputs.assemblyStructure)
+		return;
+
+	solAssert(m_assemblyStack);
+	std::string const data = jsonPrint(
+		removeNullMembers(StandardCompiler::formatAssemblyStructure(m_assemblyStack->object(_contract).subAssemblyData)),
+		m_options.formatting.json
+	);
+	sout() << "Assembly structure:" << std::endl << data << std::endl;
+}
+
 void CommandLineInterface::readInputFiles()
 {
 	solAssert(!m_standardJsonInput.has_value());
@@ -959,6 +976,7 @@ void CommandLineInterface::compile()
 			m_options.compiler.outputs.binaryRuntime ||
 			m_options.compiler.outputs.ethdebug ||
 			m_options.compiler.outputs.ethdebugRuntime ||
+			m_options.compiler.outputs.assemblyStructure ||
 			(m_options.compiler.combinedJsonRequests && (
 				m_options.compiler.combinedJsonRequests->binary ||
 				m_options.compiler.combinedJsonRequests->binaryRuntime ||
@@ -969,7 +987,8 @@ void CommandLineInterface::compile()
 				m_options.compiler.combinedJsonRequests->srcMap ||
 				m_options.compiler.combinedJsonRequests->srcMapRuntime ||
 				m_options.compiler.combinedJsonRequests->funDebug ||
-				m_options.compiler.combinedJsonRequests->funDebugRuntime
+				m_options.compiler.combinedJsonRequests->funDebugRuntime ||
+				m_options.compiler.combinedJsonRequests->assemblyStructure
 			));
 
 		m_compiler->selectContracts({{"", {{"", pipelineConfig}}}});
@@ -1093,6 +1112,10 @@ void CommandLineInterface::handleCombinedJSON()
 			if (m_options.compiler.combinedJsonRequests->funDebugRuntime)
 				contractData[g_strFunDebugRuntime] = StandardCompiler::formatFunctionDebugData(
 					m_assemblyStack->runtimeObject(contractName).functionDebugData
+				);
+			if (m_options.compiler.combinedJsonRequests->assemblyStructure)
+				contractData[g_strAssemblyStructure] = StandardCompiler::formatAssemblyStructure(
+					m_assemblyStack->object(contractName).subAssemblyData
 				);
 		}
 	}
@@ -1457,6 +1480,7 @@ void CommandLineInterface::outputCompilationResults()
 			handleNatspec(true, contract);
 			handleNatspec(false, contract);
 			handleEthdebug(contract);
+			handleAssemblyStructure(contract);
 		} // end of contracts iteration
 	}
 
