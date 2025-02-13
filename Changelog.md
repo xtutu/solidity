@@ -22,6 +22,7 @@ Bugfixes:
  * Metadata: Fix custom cleanup sequence missing from metadata when other optimizer settings have default values.
  * SMTChecker: Fix internal compiler error when analyzing overflowing expressions or bitwise negation of unsigned types involving constants.
  * SMTChecker: Fix reporting on targets that are safe in the context of one contract but unsafe in the context of another contract.
+ * SMTChecker: Fix SMT logic error in BMC when loop condition is always true in one iteration and always false in the next one.
  * SMTChecker: Fix SMT logic error when analyzing cross-contract getter call with BMC.
  * SMTChecker: Fix SMT logic error when contract deployment involves string literal to fixed bytes conversion.
  * SMTChecker: Fix SMT logic error when external call has extra effectless parentheses.
