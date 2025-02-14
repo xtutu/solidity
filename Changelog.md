@@ -20,6 +20,7 @@ Bugfixes:
  * Error Reporting: Fix error locations not being shown for source files with empty names.
  * General: Fix internal compiler error when requesting IR AST outputs for interfaces and abstract contracts.
  * Metadata: Fix custom cleanup sequence missing from metadata when other optimizer settings have default values.
+ * SMTChecker: Fix incorrect analysis when only a subset of contracts is selected with `--model-checker-contracts`.
  * SMTChecker: Fix internal compiler error when analyzing overflowing expressions or bitwise negation of unsigned types involving constants.
  * SMTChecker: Fix reporting on targets that are safe in the context of one contract but unsafe in the context of another contract.
  * SMTChecker: Fix SMT logic error when analyzing cross-contract getter call with BMC.

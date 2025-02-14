@@ -32,8 +32,13 @@ SMTCheckerTest::SMTCheckerTest(std::string const& _filename):
 	universalCallback(nullptr, smtCommand)
 {
 	auto contract = m_reader.stringSetting("SMTContract", "");
-	if (!contract.empty())
+	auto maybeContracts = ModelCheckerContracts::fromString(contract);
+	if (maybeContracts)
+		m_modelCheckerSettings.contracts = *maybeContracts;
+	else if (!contract.empty())
 		m_modelCheckerSettings.contracts.contracts[""] = {contract};
+	else
+		BOOST_THROW_EXCEPTION(std::runtime_error("Invalid contract specified."));
 
 	auto extCallsMode = ModelCheckerExtCalls::fromString(m_reader.stringSetting("SMTExtCalls", "untrusted"));
 	if (extCallsMode)
