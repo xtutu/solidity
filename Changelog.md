@@ -5,6 +5,7 @@ Language Features:
 
 
 Compiler Features:
+ * Commandline Interface: Add ``--assembly-structure`` option to provide information about assemblies and nested assemblies.
  * Error Reporting: Errors reported during code generation now point at the location of the contract when more fine-grained location is not available.
  * EVM: Support for the EVM version "Osaka".
  * EVM Assembly Import: Allow enabling opcode-based optimizer.
@@ -12,6 +13,7 @@ Compiler Features:
  * SMTChecker: Support `block.blobbasefee` and `blobhash`.
  * SMTChecker: The option `--model-checker-print-query` no longer requires `--model-checker-solvers smtlib2`.
  * SMTChecker: Z3 is now a runtime dependency, not a build dependency (except for emscripten build).
+ * Standard JSON Interface: Add ``evm.bytecode.assemblyStructure`` output that provides information about assemblies and nested assemblies.
  * Yul Parser: Make name clash with a builtin a non-fatal error.
 
 
