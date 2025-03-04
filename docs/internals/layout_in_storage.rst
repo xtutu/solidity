@@ -34,6 +34,38 @@ by the above rules, state variables from different contracts do share the same s
 The elements of structs and arrays are stored after each other, just as if they were given
 as individual values.
 
+If a contract specifies a :ref:`custom storage layout<custom_storage-layout>`, the slots which
+the state variables occupy are shifted according the value defined as the layout base.
+The custom layout is specified in the most derived contract and, following the order explained
+above, starting from the most base-ward contract's variables, all storage slots are adjusted.
+
+In the following example, contract ``C`` inherits from contracts ``A`` and ``B`` and also
+specifies a custom storage base slot.
+The result is that all variable storage slots of the inherent tree will be adjusted according to
+the value specified by ``C``.
+So, the inherited state variable ``x`` will be stored at the base slot ``0x1234``, followed by
+``y`` and ``map`` and terminating with ``flag``.
+Notice that, although their storage slots changes, their position in relation to each other
+remains the same, following the C3-linearized order.
+
+.. code-block:: solidity
+
+    // SPDX-License-Identifier: GPL-3.0
+    pragma solidity ^0.8.29;
+
+    contract A {
+        uint x;
+    }
+
+    contract B {
+        address payable y;
+        mapping (address => bool) public map;
+    }
+
+    contract C is A, B layout at 0x1234 {
+        bool flag;
+    }
+
 .. warning::
     When using elements that are smaller than 32 bytes, your contract's gas usage may be higher.
     This is because the EVM operates on 32 bytes at a time. Therefore, if the element is smaller
