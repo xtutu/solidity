@@ -2,6 +2,7 @@
 
 Language Features:
  * Introduce syntax for specifying contract storage layout base.
+ * Code Generator: generate code for contracts with a specified storage layout base.
 
 
 Compiler Features:
