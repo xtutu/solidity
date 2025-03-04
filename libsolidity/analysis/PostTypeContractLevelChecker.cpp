@@ -136,6 +136,18 @@ void PostTypeContractLevelChecker::checkStorageLayoutSpecifier(ContractDefinitio
 	solAssert(baseSlotExpressionType->isImplicitlyConvertibleTo(*TypeProvider::uint256()));
 	storageLayoutSpecifier->annotation().baseSlot = u256(baseSlot);
 
+	if (
+		u256 slotsLeft = std::numeric_limits<u256>::max() - *storageLayoutSpecifier->annotation().baseSlot;
+		slotsLeft <= u256(1) << 64
+	)
+		m_errorReporter.warning(
+			3495_error,
+			storageLayoutSpecifier->baseSlotExpression().location(),
+			fmt::format(
+				"There are {} slots before the end of the contract storage when this specified base layout is used.",
+				formatNumberReadable(slotsLeft)
+		));
+
 	bigint size = contractStorageSizeUpperBound(_contract, VariableDeclaration::Location::Unspecified);
 	solAssert(size < bigint(1) << 256);
 	if (baseSlot + size >= bigint(1) << 256)
