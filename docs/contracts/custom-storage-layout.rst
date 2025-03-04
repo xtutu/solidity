@@ -2,9 +2,9 @@
 
 .. _custom_storage-layout:
 
-************************
+*********************
 Custom Storage Layout
-************************
+*********************
 
 Contracts can define an arbitrary base slot for its own storage.
 The contract's state variables, including those inherited from base contracts,
