@@ -34,34 +34,35 @@ Json programInstructions(Assembly const* _assembly, LinkerObject const* _linkerO
 		solUnimplementedAssert(_assembly->codeSections().size() == 1, "ethdebug does not yet support multiple code-sections.");
 	}
 
-	solAssert(_linkerObject->offsetAfterLastInstruction <= _linkerObject->bytecode.size());
+	solAssert(_linkerObject->codeSectionLocations.size() == 1);
+	solAssert(_linkerObject->codeSectionLocations[0].end <= _linkerObject->bytecode.size());
 	Json instructions = Json::array();
-	for (size_t i = 0; i < _linkerObject->instructionOffsets.size(); ++i)
+	for (size_t i = 0; i < _linkerObject->codeSectionLocations[0].instructionLocations.size(); ++i)
 	{
 		solAssert(_assembly);
-		size_t offset = _linkerObject->instructionOffsets[i].offset;
-		size_t instructionIndex = _linkerObject->instructionOffsets[i].index;
-		size_t nextOffset = offset;
-		if (i + 1 < _linkerObject->instructionOffsets.size())
-			nextOffset = _linkerObject->instructionOffsets[i + 1].offset;
-		if (i == _linkerObject->instructionOffsets.size() - 1)
-			nextOffset = _linkerObject->offsetAfterLastInstruction;
-		solAssert(offset < _linkerObject->bytecode.size());
-		solAssert(nextOffset <= _linkerObject->bytecode.size());
-		solAssert(offset < nextOffset);
+		LinkerObject::InstructionLocation currentInstruction = _linkerObject->codeSectionLocations[0].instructionLocations[i];
+		size_t start = currentInstruction.start;
+		size_t end = currentInstruction.end;
+		size_t assemblyItemIndex = currentInstruction.assemblyItemIndex;
+		solAssert(start < _linkerObject->bytecode.size());
+		solAssert(end <= _linkerObject->bytecode.size());
+		solAssert(start < end);
+		solAssert(assemblyItemIndex < _assembly->codeSections().at(0).items.size());
 		Json operation = Json::object();
-		operation["mnemonic"] = instructionInfo(static_cast<Instruction>(_linkerObject->bytecode[offset]), _assembly->evmVersion()).name;
+		operation["mnemonic"] = instructionInfo(static_cast<Instruction>(_linkerObject->bytecode[start]), _assembly->evmVersion()).name;
 		static size_t constexpr instructionSize = 1;
-		bytes const argumentData(
-			_linkerObject->bytecode.begin() + static_cast<std::ptrdiff_t>(offset) + instructionSize,
-			_linkerObject->bytecode.begin() + static_cast<std::ptrdiff_t>(nextOffset)
-		);
-		if (!argumentData.empty())
-			operation["arguments"] = Json::array({ "0x" + util::toHex(argumentData) });
-		solAssert(instructionIndex < _assembly->codeSections().at(0).items.size());
-		langutil::SourceLocation const& location = _assembly->codeSections().at(0).items.at(instructionIndex).location();
+		if (start + instructionSize < end)
+		{
+			bytes const argumentData(
+				_linkerObject->bytecode.begin() + static_cast<std::ptrdiff_t>(start) + instructionSize,
+				_linkerObject->bytecode.begin() + static_cast<std::ptrdiff_t>(end)
+			);
+			if (!argumentData.empty())
+				operation["arguments"] = Json::array({ "0x" + util::toHex(argumentData) });
+		}
+		langutil::SourceLocation const& location = _assembly->codeSections().at(0).items.at(assemblyItemIndex).location();
 		Json instruction = Json::object();
-		instruction["offset"] = offset;
+		instruction["offset"] = start;
 		instruction["operation"] = operation;
 
 		instruction["context"] = Json::object();
